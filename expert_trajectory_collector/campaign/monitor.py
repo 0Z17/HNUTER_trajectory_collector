@@ -22,7 +22,7 @@ button{margin:16px 8px 0 0;padding:9px 16px;border:0;border-radius:7px;cursor:po
 <button onclick="control('resume')">继续</button><pre id='details'></pre></div>
 <script>async function refresh(){let s=await(await fetch('/api/status')).json();
 let p=s.path_target?100*s.path_accepted/s.path_target:0;fill.style.width=p.toFixed(1)+'%';
-summary.textContent=`${s.state} · ${s.path_accepted}/${s.path_target} paths · ${s.environment_complete}/${s.environment_target} env`;
+summary.textContent=`${s.state} · ${s.path_accepted}/${s.path_target} paths · ${s.environment_finished}/${s.environment_target} env`;
 details.textContent=JSON.stringify(s,null,2)}async function control(a){await fetch('/api/'+a,{method:'POST'});refresh()}
 refresh();setInterval(refresh,2000)</script></html>"""
 

@@ -7,7 +7,10 @@ This is the standalone HNUTER expert trajectory collector. Read these files befo
 3. `docs/EXPERT_DATASET_SPECIFICATION.md` — unified free-flight/inspection/surface data contract.
 4. `docs/EXPERT_TRAJECTORY_COLLECTOR.md` and `docs/OBSTACLE_SCENE_BUILDER.md` — architecture and planner behavior.
 
-Do not start the 100-environment pilot automatically. The user will explicitly start it from a fresh session after reviewing the prepared workspace.
+The v001 100-environment pilot finished with a path shortfall. The corrected
+v002 pilot completed 100/100 environments and 4,000/4,000 paths. Do not start
+or resume a full-scale campaign automatically; the user must explicitly choose
+the dataset version, output directory, and resource budget.
 
 Use `/home/z017/research/curobo_env/bin/python` for the verified OMPL/COAL Python 3.10 ABI. Build the native region sampler with that same interpreter. Keep generated datasets outside the Git repository. The batch path intentionally excludes visualization, TOPP-RA, and MuJoCo/MPPI rollout.
 

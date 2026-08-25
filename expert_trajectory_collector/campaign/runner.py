@@ -89,7 +89,9 @@ def run_campaign(
     completed = {
         int(path.parent.name.split("_")[-1])
         for path in (root / "environments").glob("env_*/progress.json")
-        if (read_json(path, {}) or {}).get("worker_state") == "complete"
+        if (read_json(path, {}) or {}).get("worker_state") in {
+            "complete", "capacity_exhausted",
+        }
     } if (root / "environments").exists() else set()
     remaining = [index for index in range(config.environment_count) if index not in completed]
     last_report = 0.0
@@ -113,7 +115,7 @@ def run_campaign(
                     eta = status["eta_s"]
                     eta_text = "--" if eta is None else f"{eta / 60:.1f} min"
                     print(
-                        f"[{status['state']}] env {status['environment_complete']}/{status['environment_target']} "
+                        f"[{status['state']}] env {status['environment_finished']}/{status['environment_target']} "
                         f"paths {status['path_accepted']}/{status['path_target']} "
                         f"rate {status['accepted_paths_per_s']:.3f}/s ETA {eta_text}",
                         flush=True,
@@ -128,7 +130,11 @@ def run_campaign(
             server.server_close()
     status = aggregate_status(root)
     manifest = {
-        "schema_version": "expert_collection_campaign_manifest_v001",
+        "schema_version": (
+            "expert_collection_campaign_manifest_v002"
+            if config.schema_version == "expert_collection_campaign_config_v002"
+            else "expert_collection_campaign_manifest_v001"
+        ),
         "config": config.to_dict(),
         "status": status,
         "provenance": read_json(root / "provenance.json", {}),

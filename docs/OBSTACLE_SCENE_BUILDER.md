@@ -95,11 +95,11 @@ Environment 导出遵循仓库现有 box schema。所有满足 `collision=true`�
 
 生成器内部通过栅格搜索或受保护 portal 路线建立基于 URDF primitive OBB 的可行性证书；“保护通道（调试）”开关会用不同颜色显示当前保留的全部路线模式。普通显示默认隐藏这些生成约束，它们不是已经规划完成的专家轨迹。
 
-start/goal 不再使用水平单位四元数：优先在 `4–40°` 的 roll 幅值、`3–70°` 的 pitch 幅值和小幅 yaw 内随机采样，并对完整姿态插值重新执行 URDF primitive 碰撞及姿态边界检查。特别狭窄的实例会退让到约 `3–6° roll`、`2–4° pitch`，但不会退回完全水平。非门框的内部参考姿态也会采样轻微 bank/pitch；姿态门框仍以其 `25–40°` 必要 roll 为主。
+start/goal 不再使用水平单位四元数：优先在 `4–35°` 的 roll 幅值、`3–65°` 的 pitch 幅值和小幅 yaw 内随机采样，为全局 B-spline 留出 5° guard band，并对完整姿态插值重新执行 URDF primitive 碰撞及姿态边界检查。特别狭窄的实例会退让到约 `3–6° roll`、`2–4° pitch`，但不会退回完全水平。非门框的内部参考姿态也会采样轻微 bank/pitch；姿态门框仍以其 `25–35°` 必要 roll 为主。
 
-`orientation_sensitive_passage` 使用整体倾斜的矩形 frame，而不是要求无人机在水平窄缝中接近侧立。frame 的目标 roll 在 `25–40°` 内随机采样；正姿态无法匹配倾斜门框，而无人机以相近 roll 可以通过。该角度同时写入障碍物的 `required_roll_deg` 和路线证书。
+`orientation_sensitive_passage` 使用整体倾斜的矩形 frame，而不是要求无人机在水平窄缝中接近侧立。frame 的目标 roll 在 `25–35°` 内随机采样；正姿态无法匹配倾斜门框，而无人机以相近 roll 可以通过。该角度同时写入障碍物的 `required_roll_deg` 和路线证书。
 
-场景与专家规划共享同一飞行姿态边界：`roll ∈ [-40°, 40°]`、`pitch ∈ [-70°, 70°]`。start/goal 在碰撞自由的前提下从该范围随机采样非水平姿态；OMPL 有效性检查和最终 B-spline 稠密复检都会拒绝越界姿态，因此平滑插值不能通过过冲绕开限制。返回 JSON 会在 `robot_reference.flight_attitude_limits_deg` 及专家指标中记录限制和实际最大绝对 roll/pitch。
+场景与专家规划共享同一硬飞行姿态边界：`roll ∈ [-40°, 40°]`、`pitch ∈ [-70°, 70°]`。生成分布使用 5° guard band，OMPL 有效性检查和最终 B-spline 稠密复检仍按完整硬边界拒绝越界姿态，因此不会用缩小训练标签覆盖来替代物理有效性验证。返回 JSON 会在 `robot_reference.flight_attitude_limits_deg` 及专家指标中记录限制和实际最大绝对 roll/pitch。
 
 ## 交互式专家轨迹
 

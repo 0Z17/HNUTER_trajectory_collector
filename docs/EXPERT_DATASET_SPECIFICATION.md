@@ -189,6 +189,7 @@ collection_metadata
 - condition-specific task features；
 - 可用拓扑/模式标签，但明确标记其是否只是有限证书集合；
 - condition validation 结果；
+- 当前 condition 保留/剪除的路线模式、最小模式要求、端点采样尝试数与耗时；环境级证书库不应被误当成每个随机端点都必须同时满足的全称约束；
 - 该 condition 请求、尝试、接受、重复和失败的专家数。
 
 Inspection 额外保存目标/可见性条件；Surface 额外保存 start/goal intrinsic state 和 phase/contact 条件。

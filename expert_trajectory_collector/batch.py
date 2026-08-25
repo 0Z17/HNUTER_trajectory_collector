@@ -19,13 +19,21 @@ def _parser() -> argparse.ArgumentParser:
     run = subparsers.add_parser("run", help="create or resume a campaign")
     run.add_argument("--output", type=Path, required=True)
     run.add_argument("--resume", action="store_true")
-    run.add_argument("--dataset-id", default="free_flight_pilot_v001")
+    run.add_argument("--dataset-id", default="free_flight_pilot_v002")
     run.add_argument("--seed", type=int, default=20260825)
     run.add_argument("--environment-count", type=int, default=100)
     run.add_argument("--paths-per-environment", type=int, default=40)
     run.add_argument("--nominal-conditions-per-environment", type=int, default=8)
     run.add_argument("--experts-per-condition", type=int, default=5)
     run.add_argument("--maximum-conditions-per-environment", type=int, default=48)
+    run.add_argument("--condition-sampling-max-attempts", type=int, default=64)
+    run.add_argument("--condition-sampling-timeout", type=float, default=4.0)
+    run.add_argument("--environment-precheck-condition-count", type=int, default=4)
+    run.add_argument("--environment-precheck-minimum-successes", type=int, default=2)
+    run.add_argument("--environment-precheck-max-attempts", type=int, default=24)
+    run.add_argument("--environment-precheck-timeout", type=float, default=1.0)
+    run.add_argument("--maximum-consecutive-condition-failures", type=int, default=8)
+    run.add_argument("--terminal-attitude-margin-deg", type=float, default=5.0)
     run.add_argument("--workers", type=int, default=12)
     run.add_argument("--solve-time", type=float, default=0.20)
     run.add_argument("--maximum-planner-attempts", type=int, default=12)
@@ -59,6 +67,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         nominal_conditions_per_environment=args.nominal_conditions_per_environment,
         experts_per_condition=args.experts_per_condition,
         maximum_conditions_per_environment=args.maximum_conditions_per_environment,
+        condition_sampling_max_attempts=args.condition_sampling_max_attempts,
+        condition_sampling_timeout_s=args.condition_sampling_timeout,
+        environment_precheck_condition_count=args.environment_precheck_condition_count,
+        environment_precheck_minimum_successes=args.environment_precheck_minimum_successes,
+        environment_precheck_max_attempts=args.environment_precheck_max_attempts,
+        environment_precheck_timeout_s=args.environment_precheck_timeout,
+        maximum_consecutive_condition_failures=args.maximum_consecutive_condition_failures,
+        terminal_attitude_margin_deg=args.terminal_attitude_margin_deg,
         workers=args.workers,
         solve_time_s=args.solve_time,
         maximum_planner_attempts=args.maximum_planner_attempts,

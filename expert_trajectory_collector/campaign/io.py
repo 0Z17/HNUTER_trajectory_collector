@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+import uuid
 
 import numpy as np
 
@@ -15,7 +16,9 @@ from .encoding import pose7_to_pose9, resample_pose7_path
 
 def atomic_write_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary = path.with_name(
+        f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
+    )
     with temporary.open("w", encoding="utf-8") as stream:
         json.dump(value, stream, ensure_ascii=False, indent=2)
         stream.flush()
@@ -32,7 +35,9 @@ def read_json(path: Path, default: Any = None) -> Any:
 
 def write_gzip_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary = path.with_name(
+        f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
+    )
     with gzip.open(temporary, "wt", encoding="utf-8") as stream:
         json.dump(value, stream, ensure_ascii=False)
     os.replace(temporary, path)

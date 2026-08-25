@@ -25,6 +25,10 @@ PROJECT_DIR = Path(__file__).resolve().parent
 MAX_OBSTACLES = 32
 MAX_FLIGHT_ROLL_DEG = 40.0
 MAX_FLIGHT_PITCH_DEG = 70.0
+# Leave room for the global degree-5 orientation spline to bend without
+# crossing the hard flight envelope.  The final checker continues to enforce
+# the physical limits above; this is only a generation-side guard band.
+SMOOTHING_ATTITUDE_GUARD_DEG = 5.0
 WORKSPACE_BOUNDS = {"min": [-4.0, -4.0, 0.0], "max": [4.0, 4.0, 4.0]}
 SAMPLING_BOUNDS = {"min": [-3.3, -3.3, 0.65], "max": [3.3, 3.3, 3.5]}
 URDF_PATH = (
@@ -147,6 +151,7 @@ class SceneParameters:
     global_yaw_deg: float = 0.0
     translate_x: float = 0.0
     translate_y: float = 0.0
+    attitude_guard_deg: float = SMOOTHING_ATTITUDE_GUARD_DEG
 
     @classmethod
     def from_mapping(cls, raw: dict[str, Any]) -> "SceneParameters":
@@ -185,6 +190,8 @@ class SceneParameters:
                 )
         if abs(params.translate_x) > 0.75 or abs(params.translate_y) > 0.75:
             raise ValueError("global translation must stay within +/-0.75 m")
+        if not 0.0 <= params.attitude_guard_deg <= 10.0:
+            raise ValueError("attitude_guard_deg must be in [0, 10]")
         return params
 
 
@@ -244,6 +251,9 @@ def sample_scene_parameters(raw: dict[str, Any]) -> tuple[SceneParameters, dict[
         "global_yaw_deg": rng.uniform(yaw_min, yaw_max),
         "translate_x": rng.uniform(-translation_max, translation_max),
         "translate_y": rng.uniform(-translation_max, translation_max),
+        "attitude_guard_deg": float(raw.get(
+            "attitude_guard_deg", SMOOTHING_ATTITUDE_GUARD_DEG,
+        )),
     }
     ranges = {
         "obstacle_count": [count_min, count_max],
@@ -593,7 +603,7 @@ def _orientation_passage(p: SceneParameters, rng: random.Random) -> list[dict[st
     wall_x = rng.uniform(-0.22, 0.22)
     thickness = rng.uniform(0.24, 0.36)
     target_roll = math.radians(
-        rng.uniform(25.0, MAX_FLIGHT_ROLL_DEG)
+        rng.uniform(25.0, MAX_FLIGHT_ROLL_DEG - p.attitude_guard_deg)
     ) * rng.choice((-1, 1))
     quaternion = rpy_quaternion(target_roll, 0.0, 0.0)
     center = np.asarray([wall_x, gap_center, rng.uniform(1.9, 2.1)])
@@ -1181,6 +1191,7 @@ def _multi_homotopy_routes(
 def _randomize_terminal_attitudes(
     routes: list[tuple[str, list[list[float]]]],
     obstacles: list[dict[str, Any]], rng: random.Random,
+    attitude_guard_deg: float,
 ) -> list[tuple[str, list[list[float]]]]:
     """Sample non-level endpoints inside the configured flight envelope."""
     # Shared endpoints of dense industrial/bracket candidates have less free
@@ -1191,8 +1202,14 @@ def _randomize_terminal_attitudes(
         topology_id.startswith(("winding", "reverse_winding", "dogleg"))
         for topology_id, _ in routes
     )
-    roll_upper = 18.0 if compact_multi_candidate else MAX_FLIGHT_ROLL_DEG
-    pitch_upper = 30.0 if compact_multi_candidate else MAX_FLIGHT_PITCH_DEG
+    roll_upper = (
+        18.0 if compact_multi_candidate
+        else MAX_FLIGHT_ROLL_DEG - attitude_guard_deg
+    )
+    pitch_upper = (
+        30.0 if compact_multi_candidate
+        else MAX_FLIGHT_PITCH_DEG - attitude_guard_deg
+    )
     for _ in range(100):
         endpoint_quaternions = []
         for base_pose in (routes[0][1][0], routes[0][1][-1]):
@@ -2649,7 +2666,9 @@ def generate_scene(raw: dict[str, Any] | SceneParameters) -> dict[str, Any]:
     # attitudes against the complete scene.  Inflating every corridor by a
     # random 70-degree endpoint pitch during packing needlessly removed most
     # useful tall-box locations.
-    topology_routes = _randomize_terminal_attitudes(topology_routes, obstacles, rng)
+    topology_routes = _randomize_terminal_attitudes(
+        topology_routes, obstacles, rng, p.attitude_guard_deg,
+    )
     route = topology_routes[0][1]
     if not all(route_is_free(candidate, obstacles) for _, candidate in topology_routes):
         raise ValueError("internal error: secondary obstacles invalidated the feasibility route")
