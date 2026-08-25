@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hnuter-trajectory-collector"
+version = "0.1.0"
+description = "Task-pluggable expert trajectory collection and visualization for HNUTER"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "HNUTER project contributors"}]
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+planner = ["ompl>=2.0", "coal>=3.0"]
+test = ["pytest>=8"]
+
+[project.scripts]
+hnuter-expert-collector = "expert_trajectory_collector.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = [
+  "coal_collision",
+  "multi_waypoint_planner",
+  "obstacle_scene_builder",
+  "obstacle_scene_experts",
+  "ompl_se3_planner",
+]
+
+[tool.setuptools.packages.find]
+include = ["expert_trajectory_collector*", "mppi*", "native*"]
+
+[tool.setuptools.package-data]
+expert_trajectory_collector = ["assets/*.urdf", "web_assets/*.html", "web_assets/*.css", "web_assets/*.js"]
+"native.ompl_region_sampler" = ["CMakeLists.txt", "*.cpp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

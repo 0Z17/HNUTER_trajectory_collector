@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HNUTER Expert Trajectory Studio</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div>
+      <p class="eyebrow">HNUTER · EXPERT DATA LAB</p>
+      <h1>Expert Trajectory Studio</h1>
+    </div>
+    <div class="top-actions">
+      <span id="statusPill" class="status-pill ok"><i></i> CONDITION VALID</span>
+      <button id="downloadTokens" class="button ghost">导出 Conditioning</button>
+      <button id="downloadScene" class="button primary">导出任务条件</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="panel controls-panel">
+      <div class="panel-heading">
+        <span>01</span>
+        <div><h2>任务与条件</h2><p>可扩展专家轨迹采集工作台</p></div>
+      </div>
+
+      <label class="field full">
+        <span>轨迹任务</span>
+        <select id="taskType"><option value="free_flight">正在读取任务插件…</option></select>
+      </label>
+      <div id="taskDescription" class="task-description">读取任务契约…</div>
+
+      <label class="field full">
+        <span>Free-flight 障碍物族</span>
+        <select id="family"></select>
+      </label>
+
+      <div class="field-grid">
+        <label class="field"><span>随机种子</span><input id="seed" type="number" value="1" step="1"></label>
+        <label class="check-field"><input id="autoSeed" type="checkbox" checked><span>每次随机</span></label>
+      </div>
+
+      <div class="field-label">障碍物数量范围（训练建议 8–18，20+ 为压力测试）</div>
+      <div class="field-grid">
+        <label class="field"><span>最少</span><input id="countMin" type="number" value="5" min="1" max="32"></label>
+        <label class="field"><span>最多</span><input id="countMax" type="number" value="12" min="1" max="32"></label>
+      </div>
+
+      <div class="field-label">有效通道宽度范围（URDF 约束）</div>
+      <div class="field-grid">
+        <label class="field"><span>最窄 / m</span><input id="gapMin" type="number" value="1.53" min="0.5" max="3.2" step="0.01"></label>
+        <label class="field"><span>最宽 / m</span><input id="gapMax" type="number" value="1.90" min="0.5" max="3.2" step="0.01"></label>
+      </div>
+
+      <div class="field-grid">
+        <label class="field"><span>最小尺寸</span><input id="sizeMin" type="number" value="0.45" min="0.15" max="3.5" step="0.05"></label>
+        <label class="field"><span>最大尺寸</span><input id="sizeMax" type="number" value="1.00" min="0.15" max="3.5" step="0.05"></label>
+      </div>
+
+      <div class="field-label">整体旋转随机范围</div>
+      <div class="field-grid">
+        <label class="field"><span>YAW MIN / °</span><input id="yawMin" type="number" value="-35" min="-180" max="180" step="1"></label>
+        <label class="field"><span>YAW MAX / °</span><input id="yawMax" type="number" value="35" min="-180" max="180" step="1"></label>
+      </div>
+      <label class="field"><span>整体 XY 平移范围 / ±m</span><input id="translationMax" type="number" value="0.30" min="0" max="0.55" step="0.05"></label>
+
+      <div class="generate-row">
+        <button id="randomize" class="button icon-button" title="换一个随机种子">↻</button>
+        <button id="generate" class="button primary wide">生成任务条件</button>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-title"><h3>专家轨迹</h3><span>OMPL → B-SPLINE</span></div>
+      <label class="field full">
+        <span>专家规划模式</span>
+        <select id="planningMode">
+          <option value="guided_regions" selected>场景引导区域（严格通道固定点回退）</option>
+        </select>
+      </label>
+      <div class="field-grid">
+        <label class="field"><span>同端点专家数</span><input id="expertCount" type="number" value="4" min="1" max="8"></label>
+        <label class="field"><span>每次规划时间 / s</span><input id="expertSolveTime" type="number" value="1.00" min="0.1" max="5" step="0.05"></label>
+      </div>
+      <button id="generateExperts" class="button expert-button wide">生成专家轨迹</button>
+      <button id="downloadCollection" class="button ghost wide" disabled>导出专家采集记录</button>
+      <div class="trajectory-toggles">
+        <label><input id="showOmpl" type="checkbox" checked><span>OMPL 初始轨迹</span></label>
+        <label><input id="showBspline" type="checkbox" checked><span>B-spline 平滑轨迹</span></label>
+        <label><input id="showGhosts" type="checkbox"><span>URDF 姿态残影</span></label>
+        <label><input id="showCertificate" type="checkbox"><span>引导区域 / 保护通道（调试）</span></label>
+      </div>
+      <label class="field range-field compact">
+        <span>每条轨迹残影数量 <output id="ghostOut">10</output></span>
+        <input id="ghostDensity" type="range" min="2" max="30" value="10" step="1">
+      </label>
+      <div id="expertStatus" class="expert-status">尚未生成专家轨迹</div>
+
+      <div class="divider"></div>
+      <div class="section-title"><h3>条件批次预估</h3><span>DATASET</span></div>
+      <div class="metric-grid">
+        <div class="metric"><b id="variantsMetric">10</b><span>每族样本</span></div>
+        <div class="metric"><b id="totalMetric">100</b><span>总环境数</span></div>
+        <div class="metric"><b>32</b><span>token 上限</span></div>
+      </div>
+      <label class="field range-field compact">
+        <span>每族变体 <output id="variantsOut">10</output></span>
+        <input id="variants" type="range" min="1" max="100" value="10" step="1">
+      </label>
+      <button id="downloadBatch" class="button ghost wide">导出随机化条件批次</button>
+    </aside>
+
+    <section class="workspace">
+      <div class="viewport-toolbar">
+        <div class="view-tabs" role="group" aria-label="camera views">
+          <button data-view="iso" class="active">透视</button>
+          <button data-view="top">顶视</button>
+          <button data-view="front">前视</button>
+          <button id="resetCamera">复位</button>
+        </div>
+        <div class="viewport-hint">左键旋转 · 右键 / Shift+左键平移 · 滚轮缩放 · 点击选择</div>
+      </div>
+      <div id="viewport" class="viewport">
+        <canvas id="sceneCanvas"></canvas>
+        <div class="axis-widget" aria-hidden="true"><i class="x">X</i><i class="y">Y</i><i class="z">Z</i></div>
+        <div class="legend">
+          <span><i class="swatch obstacle"></i>OBB 障碍物</span>
+          <span><i class="swatch endpoint"></i>Start / Goal</span>
+          <span><i class="swatch ompl"></i>OMPL</span>
+          <span><i class="swatch spline"></i>B-spline</span>
+          <span><i class="swatch certificate"></i>保护通道（调试）</span>
+          <span><i class="swatch bounds"></i>固定边界</span>
+        </div>
+        <div id="emptyHint" class="empty-hint" hidden>生成一个任务条件开始检查</div>
+      </div>
+      <div class="workspace-footer">
+        <span id="sceneId">—</span>
+        <span id="cameraReadout">CAM · ISO · ELEV 36° · 100%</span>
+      </div>
+    </section>
+
+    <aside class="panel inspector-panel">
+      <div class="panel-heading">
+        <span>02</span>
+        <div><h2>任务条件检查器</h2><p id="obstacleSummary">0 个有效障碍物</p></div>
+      </div>
+
+      <div class="section-title"><h3>Cross-attention</h3><span>10-D</span></div>
+      <div class="attention-card">
+        <div class="token-header"><b id="tokenUsage">0 / 32</b><span>active tokens</span></div>
+        <div class="token-bar"><i id="tokenFill"></i></div>
+        <div class="token-order">xyz · size<sub>xyz</sub> · q<sub>wxyz</sub></div>
+        <div id="sampledParameters" class="sampled-parameters">等待生成参数</div>
+      </div>
+
+      <div class="section-title list-heading"><h3>障碍物</h3><button id="addObstacle" title="添加 box">＋ 添加</button></div>
+      <div id="obstacleList" class="obstacle-list"></div>
+
+      <div id="editor" class="editor" hidden>
+        <div class="section-title"><h3 id="editorTitle">编辑障碍物</h3><button id="deleteObstacle" class="danger">删除</button></div>
+        <div class="triple-grid">
+          <label class="mini-field"><span>X</span><input data-edit="position.0" type="number" step="0.05"></label>
+          <label class="mini-field"><span>Y</span><input data-edit="position.1" type="number" step="0.05"></label>
+          <label class="mini-field"><span>Z</span><input data-edit="position.2" type="number" step="0.05"></label>
+        </div>
+        <div class="triple-grid">
+          <label class="mini-field"><span>SIZE X</span><input data-edit="size.0" type="number" min="0.05" step="0.05"></label>
+          <label class="mini-field"><span>SIZE Y</span><input data-edit="size.1" type="number" min="0.05" step="0.05"></label>
+          <label class="mini-field"><span>SIZE Z</span><input data-edit="size.2" type="number" min="0.05" step="0.05"></label>
+        </div>
+        <label class="field compact"><span>YAW（度）</span><input data-edit="yaw" type="number" step="1"></label>
+      </div>
+
+      <div class="section-title"><h3>校验结果</h3><span id="issueCount">0 ISSUES</span></div>
+      <div id="validationBox" class="validation-box ok">场景结构与 token contract 相容</div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

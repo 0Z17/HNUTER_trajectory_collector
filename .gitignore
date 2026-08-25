@@ -1,0 +1,29 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# Native OMPL extension and downloaded sources
+*.so
+*.dylib
+*.dll
+.native_deps/
+native/ompl_region_sampler/build/
+
+# Runtime output
+logs/
+results/
+datasets/
+*.csv
+*.log
+
+# Editors and agent-local metadata
+.idea/
+.vscode/
+.agents/
+.codex/
+*.swp
