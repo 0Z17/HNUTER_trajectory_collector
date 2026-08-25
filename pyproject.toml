@@ -18,6 +18,7 @@ test = ["pytest>=8"]
 
 [project.scripts]
 hnuter-expert-collector = "expert_trajectory_collector.cli:main"
+hnuter-expert-batch = "expert_trajectory_collector.batch:main"
 
 [tool.setuptools]
 include-package-data = true

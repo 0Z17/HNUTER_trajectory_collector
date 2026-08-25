@@ -35,6 +35,16 @@ python3 -m expert_trajectory_collector --generate \
 python3 obstacle_scene_builder.py
 ```
 
+## 无界面后台采集
+
+可恢复批处理入口为：
+
+```bash
+python3 -m expert_trajectory_collector.batch --help
+```
+
+它按环境并行，在 condition 边界原子落盘，支持终端状态、轻量监控页以及安全暂停/继续。100 环境/约 4,000 路径 pilot 的完整命令、恢复方式与文件说明见 [pilot 后台采集运行手册](docs/PILOT_COLLECTION_RUNBOOK.md)。该路径不启用场景绘图、URDF 残影、TOPP-RA 或 MuJoCo rollout。
+
 ## 为什么需要原生扩展
 
 区域偏置不是把锚点塞进最终路径，而是在 RRTConnect 查询内部注册自定义 `StateSamplerAllocator`，以 70% 区域采样和 30% 全局采样提高有效通道的探索效率。因此扩展必须针对当前 Python 与 OMPL ABI 构建，生成的 `.so` 只保留在本机，不提交到 Git。
@@ -70,7 +80,7 @@ TaskRegistry -> TaskPlugin             稳定扩展边界
 
 统一采集记录使用 `expert_trajectory_collection_record_v001`，稳定保存 `task_type`、`task_contract`、`condition`、`conditioning`、`expert_set` 与 `collection_metadata`。任务专属 schema 保留在插件内部，便于后续 inspection 保存 FOV/LOS 与目标几何，surface 保存曲面参数域、接触约束、intrinsic states 和 lifted pose。
 
-更多说明见 [采集器架构](docs/EXPERT_TRAJECTORY_COLLECTOR.md) 与 [自由飞行场景/专家策略](docs/OBSTACLE_SCENE_BUILDER.md)。
+更多说明见 [采集器架构](docs/EXPERT_TRAJECTORY_COLLECTOR.md)、[统一专家路径数据规范](docs/EXPERT_DATASET_SPECIFICATION.md)、[新会话交接](docs/CODEX_HANDOFF.md) 与 [自由飞行场景/专家策略](docs/OBSTACLE_SCENE_BUILDER.md)。
 
 ## 测试
 

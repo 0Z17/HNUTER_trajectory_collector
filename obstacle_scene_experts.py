@@ -259,6 +259,8 @@ def generate_expert_trajectories(
     environment: dict[str, Any], *, count: int = 3, seed: int = 1,
     solve_time: float = 0.45, diversity_threshold_m: float = 0.08,
     planning_mode: str = "guided_regions",
+    collision_checker: ConservativeURDFCollisionChecker | None = None,
+    maximum_attempts: int | None = None,
 ) -> dict[str, Any]:
     if not 1 <= int(count) <= 8:
         raise ValueError("expert count must be in [1, 8]")
@@ -348,7 +350,7 @@ def generate_expert_trajectories(
     bounds = environment["sampling_space"]["position_bounds"]
     bounds_min = np.asarray(bounds["min"], dtype=np.float64)
     bounds_max = np.asarray(bounds["max"], dtype=np.float64)
-    checker = ConservativeURDFCollisionChecker(environment)
+    checker = collision_checker or ConservativeURDFCollisionChecker(environment)
     if not all(checker.is_collision_free(pose[:3], pose[3:7]) for pose in base_route):
         raise ValueError("scene feasibility route is stale or colliding")
 
@@ -370,11 +372,17 @@ def generate_expert_trajectories(
     rejection_reason_counts: dict[str, int] = {}
     attempt_diagnostics: list[dict[str, Any]] = []
     started = time.perf_counter()
-    maximum_attempts = (
+    default_maximum_attempts = (
         max(6, int(count) * 3)
         if planning_mode == "pure_rrtconnect"
         else max(12, int(count) * 6)
     )
+    if maximum_attempts is None:
+        maximum_attempts = default_maximum_attempts
+    else:
+        maximum_attempts = int(maximum_attempts)
+        if maximum_attempts < 1:
+            raise ValueError("maximum_attempts must be positive")
     stage_attempt_counts: dict[str, int] = {}
     guide_attempt_counts = {guide["id"]: 0 for guide in planning_guides}
     guide_accept_counts = {guide["id"]: 0 for guide in planning_guides}
